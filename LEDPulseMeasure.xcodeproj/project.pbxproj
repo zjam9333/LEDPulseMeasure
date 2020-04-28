@@ -8,20 +8,19 @@
 
 /* Begin PBXBuildFile section */
 		1C3CCD8F2456B12000C993EA /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C3CCD8E2456B12000C993EA /* AppDelegate.m */; };
-		1C3CCD922456B12000C993EA /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C3CCD912456B12000C993EA /* SceneDelegate.m */; };
 		1C3CCD952456B12000C993EA /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C3CCD942456B12000C993EA /* ViewController.m */; };
 		1C3CCD982456B12000C993EA /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1C3CCD962456B12000C993EA /* Main.storyboard */; };
 		1C3CCD9A2456B12200C993EA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1C3CCD992456B12200C993EA /* Assets.xcassets */; };
 		1C3CCD9D2456B12200C993EA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1C3CCD9B2456B12200C993EA /* LaunchScreen.storyboard */; };
 		1C3CCDA02456B12200C993EA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C3CCD9F2456B12200C993EA /* main.m */; };
+		1C3CCDA92456B2B100C993EA /* ZZLEDPulseMeasure.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C3CCDA82456B2B100C993EA /* ZZLEDPulseMeasure.m */; };
+		1C3CCDAC2456F3DA00C993EA /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C3CCDAB2456F3DA00C993EA /* Accelerate.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		1C3CCD8A2456B12000C993EA /* LEDPulseMeasure.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LEDPulseMeasure.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C3CCD8D2456B12000C993EA /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		1C3CCD8E2456B12000C993EA /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		1C3CCD902456B12000C993EA /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
-		1C3CCD912456B12000C993EA /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
 		1C3CCD932456B12000C993EA /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		1C3CCD942456B12000C993EA /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		1C3CCD972456B12000C993EA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -29,6 +28,11 @@
 		1C3CCD9C2456B12200C993EA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		1C3CCD9E2456B12200C993EA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1C3CCD9F2456B12200C993EA /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		1C3CCDA72456B2B100C993EA /* ZZLEDPulseMeasure.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ZZLEDPulseMeasure.h; sourceTree = "<group>"; };
+		1C3CCDA82456B2B100C993EA /* ZZLEDPulseMeasure.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ZZLEDPulseMeasure.m; sourceTree = "<group>"; };
+		1C3CCDAB2456F3DA00C993EA /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		1C3CCDAD2457DC2200C993EA /* TestFFT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestFFT.h; sourceTree = "<group>"; };
+		1C3CCDAE2457DC2200C993EA /* TestFFT.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestFFT.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C3CCDAC2456F3DA00C993EA /* Accelerate.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -47,6 +52,7 @@
 			children = (
 				1C3CCD8C2456B12000C993EA /* LEDPulseMeasure */,
 				1C3CCD8B2456B12000C993EA /* Products */,
+				1C3CCDAA2456F3DA00C993EA /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -61,10 +67,9 @@
 		1C3CCD8C2456B12000C993EA /* LEDPulseMeasure */ = {
 			isa = PBXGroup;
 			children = (
+				1C3CCDA62456B1D400C993EA /* Camera */,
 				1C3CCD8D2456B12000C993EA /* AppDelegate.h */,
 				1C3CCD8E2456B12000C993EA /* AppDelegate.m */,
-				1C3CCD902456B12000C993EA /* SceneDelegate.h */,
-				1C3CCD912456B12000C993EA /* SceneDelegate.m */,
 				1C3CCD932456B12000C993EA /* ViewController.h */,
 				1C3CCD942456B12000C993EA /* ViewController.m */,
 				1C3CCD962456B12000C993EA /* Main.storyboard */,
@@ -72,8 +77,27 @@
 				1C3CCD9B2456B12200C993EA /* LaunchScreen.storyboard */,
 				1C3CCD9E2456B12200C993EA /* Info.plist */,
 				1C3CCD9F2456B12200C993EA /* main.m */,
+				1C3CCDAD2457DC2200C993EA /* TestFFT.h */,
+				1C3CCDAE2457DC2200C993EA /* TestFFT.m */,
 			);
 			path = LEDPulseMeasure;
+			sourceTree = "<group>";
+		};
+		1C3CCDA62456B1D400C993EA /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				1C3CCDA72456B2B100C993EA /* ZZLEDPulseMeasure.h */,
+				1C3CCDA82456B2B100C993EA /* ZZLEDPulseMeasure.m */,
+			);
+			path = Camera;
+			sourceTree = "<group>";
+		};
+		1C3CCDAA2456F3DA00C993EA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1C3CCDAB2456F3DA00C993EA /* Accelerate.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -147,9 +171,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				1C3CCD952456B12000C993EA /* ViewController.m in Sources */,
+				1C3CCDA92456B2B100C993EA /* ZZLEDPulseMeasure.m in Sources */,
 				1C3CCD8F2456B12000C993EA /* AppDelegate.m in Sources */,
 				1C3CCDA02456B12200C993EA /* main.m in Sources */,
-				1C3CCD922456B12000C993EA /* SceneDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -289,15 +313,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = NW3KV7KHV6;
 				INFOPLIST_FILE = LEDPulseMeasure/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = jam.studio.LEDPulseMeasure;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				PROVISIONING_PROFILE_SPECIFIER = DEV_XC_Wild;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -305,15 +333,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = NW3KV7KHV6;
 				INFOPLIST_FILE = LEDPulseMeasure/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = jam.studio.LEDPulseMeasure;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				PROVISIONING_PROFILE_SPECIFIER = DEV_XC_Wild;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
