@@ -12,26 +12,36 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface ZZLEDColorSample : NSObject
+@interface ZZLEDSignalSample : NSObject
 
-@property (nonatomic, assign) NSTimeInterval timeInterval;
-@property (nonatomic, assign, readonly) CGFloat value;
+@property (nonatomic, assign) NSTimeInterval time;
 
-@property (nonatomic, assign) CGFloat hue;
-@property (nonatomic, assign) CGFloat saturation;
-@property (nonatomic, assign) CGFloat brightness;
+@property (nonatomic, assign) UIColor *color;
+
+//@property (nonatomic, assign) CGFloat hue;
+//@property (nonatomic, assign) CGFloat saturation;
+//@property (nonatomic, assign) CGFloat brightness;
+
+@property (nonatomic, weak) UIView *pointView;
+
+@property (nonatomic, assign) BOOL selected;
+@property (nonatomic, assign) CGFloat value;
+
+@property (nonatomic, assign) CGFloat pulseIntensity;
+// 与上一个的时间差
+@property (nonatomic, assign) NSTimeInterval deltaTime;
 
 @end
 
 @interface ZZLEDPulseDetection : NSObject
 
-@property (nonatomic, strong) NSArray<ZZLEDColorSample *> *detectedSamples;
+@property (nonatomic, strong) NSArray<ZZLEDSignalSample *> *detectedSamples;
 @property (nonatomic, assign) float pulsePerMin;
 @property (nonatomic, assign) BOOL failed;
 
 @end
 
-typedef void (^ZZLEDPulseSampleCallBack)(ZZLEDColorSample *sample);
+typedef void (^ZZLEDPulseSampleCallBack)(ZZLEDSignalSample *sample);
 typedef void (^ZZLEDPulseDetectCallBack)(ZZLEDPulseDetection *detection);
 
 @interface ZZLEDPulseMeasure : NSObject

@@ -14,6 +14,7 @@
 @property (nonatomic, strong) ZZLEDPulseMeasure *measure;
 @property (weak, nonatomic) IBOutlet UIView *drawView;
 @property (weak, nonatomic) IBOutlet UILabel *textLabel;
+@property (weak, nonatomic) IBOutlet UILabel *heartView;
 
 @end
 
@@ -27,13 +28,13 @@
     [self.view.layer addSublayer:self.measure.previewLayer];
     
     UIView *view = self.drawView;
-    self.measure.sampleCallBack = ^(ZZLEDColorSample * _Nonnull sample) {
+    self.measure.sampleCallBack = ^(ZZLEDSignalSample * _Nonnull sample) {
 //        NSLog(@"%@", @(sample.brightness));
         CGSize size = view.frame.size;
         CGFloat x = size.width;
-        CGFloat y = size.height * (1 - sample.brightness);
+        CGFloat y = size.height * (1 - sample.value);
         UIView *point = [[UIView alloc] initWithFrame:CGRectMake(x, y, 1, 1)];
-        point.backgroundColor = UIColor.redColor;
+        point.backgroundColor = sample.color ? : UIColor.whiteColor;
         [view addSubview:point];
         [UIView animateWithDuration:10 delay:0 options:UIViewAnimationOptionCurveLinear animations:^{
             CGRect fra = point.frame;
@@ -42,17 +43,19 @@
         } completion:^(BOOL finished) {
             [point removeFromSuperview];
         }];
+        sample.pointView = point;
     };
     UILabel *label = self.textLabel;
+    UIView *heartView = self.heartView;
     self.measure.detectCallBack = ^(ZZLEDPulseDetection * _Nonnull detection) {
         label.text = @((int)(detection.pulsePerMin)).stringValue;
-//        [UIView animateWithDuration:0.1 animations:^{
-//            label.transform = CGAffineTransformMakeScale(2, 2);
-//        } completion:^(BOOL finished) {
-//            [UIView animateWithDuration:0.4 animations:^{
-//                label.transform = CGAffineTransformMakeScale(1, 1);
-//            } completion:nil];
-//        }];
+        UIView *pointv = detection.detectedSamples.lastObject.pointView;
+        pointv.backgroundColor = UIColor.redColor;
+        pointv.transform = CGAffineTransformMakeScale(4, 4);
+        heartView.transform = CGAffineTransformMakeScale(1.5, 1.5);
+        [UIView animateWithDuration:0.2 animations:^{
+            heartView.transform = CGAffineTransformMakeScale(1, 1);
+        }];
     };
 }
 

@@ -15,6 +15,7 @@
 		1C3CCDA02456B12200C993EA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C3CCD9F2456B12200C993EA /* main.m */; };
 		1C3CCDA92456B2B100C993EA /* ZZLEDPulseMeasure.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C3CCDA82456B2B100C993EA /* ZZLEDPulseMeasure.m */; };
 		1C3CCDAC2456F3DA00C993EA /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C3CCDAB2456F3DA00C993EA /* Accelerate.framework */; };
+		1C3CCDB124591D3800C993EA /* TestFFT.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C3CCDAE2457DC2200C993EA /* TestFFT.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -172,6 +173,7 @@
 			files = (
 				1C3CCD952456B12000C993EA /* ViewController.m in Sources */,
 				1C3CCDA92456B2B100C993EA /* ZZLEDPulseMeasure.m in Sources */,
+				1C3CCDB124591D3800C993EA /* TestFFT.m in Sources */,
 				1C3CCD8F2456B12000C993EA /* AppDelegate.m in Sources */,
 				1C3CCDA02456B12200C993EA /* main.m in Sources */,
 			);

@@ -9,11 +9,11 @@
 #import "ZZLEDPulseMeasure.h"
 #import <Accelerate/Accelerate.h>
 
-@implementation ZZLEDColorSample
+@implementation ZZLEDSignalSample
 
-- (CGFloat)value {
-    return self.brightness;
-}
+//- (CGFloat)value {
+//    return self.brightness;
+//}
 
 @end
 
@@ -21,7 +21,18 @@
 
 @end
 
-const long kPreferSignalLength = 100;
+@interface ZZLEDSignalSampleGroup : NSObject
+
+@property (nonatomic, strong) NSArray<ZZLEDSignalSample *> *simples;
+
+@end
+
+@implementation ZZLEDSignalSampleGroup
+
+@end
+
+const long kMinSignalSampleCount = 30;
+const long kMaxSignalSampleCount = 60;
 
 @interface ZZLEDPulseMeasure ()<AVCaptureVideoDataOutputSampleBufferDelegate>
 
@@ -36,8 +47,7 @@ const long kPreferSignalLength = 100;
 
 @property (nonatomic, assign) FFTSetup signalFFTSetup;
 @property (nonatomic, strong) NSMutableArray *signals;
-
-@property (nonatomic, assign) BOOL didArrivePreferSinalLength;
+@property (nonatomic, strong) NSMutableArray *foundPulses;
 
 @end
 
@@ -65,6 +75,7 @@ const long kPreferSignalLength = 100;
     [self.session stopRunning];
     [self setTorchOpen:NO];
     [self.signals removeAllObjects];
+    [self.foundPulses removeAllObjects];
 }
 
 - (void)setTorchOpen:(BOOL)open {
@@ -136,18 +147,68 @@ const long kPreferSignalLength = 100;
             red += data[pixelIndex + 2];
         }
     }
-    red /= pixelCount;
-    green /= pixelCount;
-    blue /= pixelCount;
-    UIColor *color = [UIColor colorWithRed:red / 255 green:green / 255 blue:blue / 255 alpha:0];
+    red = red / pixelCount / 255;
+    green = green / pixelCount / 255;
+    blue = blue / pixelCount / 255;
+    UIColor *color = [UIColor colorWithRed:red green:green blue:blue alpha:1];
     CGFloat hue, saturation, brightness;
     [color getHue:&hue saturation:&saturation brightness:&brightness alpha:nil];
-    ZZLEDColorSample *sample = [[ZZLEDColorSample alloc] init];
-    sample.timeInterval = NSDate.timeIntervalSinceReferenceDate;
-    sample.hue = hue;
-    sample.saturation = saturation;
-    sample.brightness = brightness;
+    
+    ZZLEDSignalSample *sample = [[ZZLEDSignalSample alloc] init];
+    sample.time = NSDate.timeIntervalSinceReferenceDate;
+    sample.value = green;
     [self handleSignalSample:sample];
+    
+    // test which channel is the best
+    // 实验证明绿色较好
+    /*
+    if (self.sampleCallBack) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            // test r, g, b, h, s, v
+            ZZLEDSignalSample *sample = [[ZZLEDSignalSample alloc] init];
+            sample.value = green;
+            sample.color = UIColor.greenColor;
+            self.sampleCallBack(sample);
+            
+            sample = [[ZZLEDSignalSample alloc] init];
+            sample.value = red;
+            sample.color = UIColor.redColor;
+            self.sampleCallBack(sample);
+            
+            sample = [[ZZLEDSignalSample alloc] init];
+            sample.value = blue;
+            sample.color = UIColor.blueColor;
+            self.sampleCallBack(sample);
+            
+            sample = [[ZZLEDSignalSample alloc] init];
+            sample.value = hue;
+            sample.color = UIColor.yellowColor;
+            self.sampleCallBack(sample);
+            sample = [[ZZLEDSignalSample alloc] init];
+            sample.value = brightness;
+            sample.color = UIColor.whiteColor;
+            self.sampleCallBack(sample);
+            sample = [[ZZLEDSignalSample alloc] init];
+            sample.value = saturation;
+            sample.color = UIColor.magentaColor;
+            self.sampleCallBack(sample);
+        });
+    }
+     //*/
+//    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//
+//        ZZLEDSignalSample *sample = [[ZZLEDSignalSample alloc] init];
+//        sample.timeInterval = NSDate.timeIntervalSinceReferenceDate;
+//        sample.hue = hue;
+//        sample.saturation = saturation;
+//        sample.brightness = brightness;
+//        [self handleSignalSample:sample];
+//    });
+//    static int a;
+//    a ++;
+//    if (a % 2 == 0) {
+//        [self handleSignalSample:sample];
+//    }
     
     CVPixelBufferUnlockBaseAddress(cvimg, 0);
 }
@@ -156,24 +217,27 @@ const long kPreferSignalLength = 100;
 
 - (void)setupSignalProcess {
     self.signals = NSMutableArray.array;
+    self.foundPulses = NSMutableArray.array;
 }
 
-- (void)handleSignalSample:(ZZLEDColorSample *)sample {
-    NSInteger count = self.signals.count;
-    if (count == 0) {
-        self.didArrivePreferSinalLength = NO;
-    }
-    [self.signals addObject:sample];
-    count += 1;
-    
-//    BOOL hasEnou
-//    if (count > kPreferSignalLength -) {
-////        [self calculateUsingFFT];
+- (void)handleSignalSample:(ZZLEDSignalSample *)sample {
+//    sample.brightness = (sample.brightness - 0.8) * 4;
+//    ZZLEDSignalSample *theLastOne = self.signals.lastObject;
+//    if (theLastOne) {
+//        float weight = 0.5;
+//        sample.brightness = (sample.value * weight) + (theLastOne.value * (1.0 - weight));
+//        // 防抖？
 //    }
-    if (count > kPreferSignalLength) {
+    [self.signals addObject:sample];
+    NSInteger count = self.signals.count;
+    // 有一定数量的样本就开始数
+    if (count > kMinSignalSampleCount) {
         [self calculateInMyWay];
-        self.didArrivePreferSinalLength = YES;
-        [self.signals removeObjectsInRange:NSMakeRange(0, kPreferSignalLength / 5)];
+    }
+    // 保证最大样品数量
+    if (count > kMaxSignalSampleCount) {
+        [self.signals removeObjectsInRange:NSMakeRange(0, kMaxSignalSampleCount / 5)];
+//        [self.signals removeObjectAtIndex:0];
     }
     
     if (self.sampleCallBack) {
@@ -184,31 +248,177 @@ const long kPreferSignalLength = 100;
 }
 
 - (void)calculateInMyWay {
+    // 已知波动是有规律的，一个周期内，缓慢上升，极速下降
+    // 目标是找出下降的位置
+    // 以n个点为一组，计算出相邻两点的差，若差的和小于某个阈值，说明有下降趋势，要注意是不是噪声导致的下降
+    // 以上面找到的有下降趋势的起点，是否有必要再往后找差的和最小的位置
+    // 得到一个位置，寻找下一个
+    
     NSArray *usingSignals = self.signals.copy;
     NSInteger count = usingSignals.count;
-    NSInteger steps = 4;
-    NSMutableArray *foundPulses = NSMutableArray.array;
-    for (NSInteger i = 0; i + steps < count - 1; i++) {
-        ZZLEDColorSample *firstSampleForStep = usingSignals[i];
-        ZZLEDColorSample *lastCheckSample = firstSampleForStep;
+//    NSInteger steps = 4;
+//    NSMutableArray *foundPulses = NSMutableArray.array;
+    
+    // 找到上一次脉冲
+    ZZLEDSignalSample *lastFoundSample = nil;
+    NSTimeInterval nowTime = NSDate.timeIntervalSinceReferenceDate;
+    NSInteger lastFoundIndex = 0;
+    for (NSInteger emuIndex = count - 1; emuIndex >= 0; emuIndex--) {
+        ZZLEDSignalSample *sig = usingSignals[emuIndex];
+        if (sig.selected && (nowTime - sig.time < 2.0)) {
+            lastFoundSample = sig;
+            lastFoundIndex = emuIndex;
+            break;
+        }
+    }
+    if (lastFoundIndex == 0) {
+        NSInteger preferTailCount = 5;
+        // 多少个样本足以判断一个脉冲？
+        if (count > preferTailCount) {
+            lastFoundIndex = count - preferTailCount;
+        }
+    }
+    
+    NSInteger dropingIndex = 0;
+    NSInteger risingIndex = 0;
+    ZZLEDSignalSample *lastCheckSample = lastFoundSample;
+    float pulseIntensity = 0;
+    float lastDelta = 0;
+    for (NSInteger emuIndex = lastFoundIndex + 1; emuIndex < count - 1; emuIndex++) {
+        ZZLEDSignalSample *sig = usingSignals[emuIndex];
+        float delta = sig.value - lastCheckSample.value;
+        lastCheckSample = sig;
+        if (delta < 0) {
+            // start droping?
+            if (delta < lastFoundSample.pulseIntensity * 0.25) {
+                pulseIntensity += delta;
+                // start
+                if (delta < lastDelta) {
+                    lastDelta = delta;
+                    dropingIndex = emuIndex;
+                    // found a start droping point
+                    continue;
+                }
+            }
+        }
+        if (dropingIndex > 0) {
+            if (delta >= 0) {
+                risingIndex = emuIndex;
+                break;
+            }
+        }
+    }
+    if (dropingIndex > 0 && risingIndex > dropingIndex) {
+        NSInteger usingIndex = (dropingIndex + risingIndex) / 2;
+        NSLog(@"found:%@", @(arc4random()));
+        ZZLEDSignalSample *foundSample = usingSignals[usingIndex];
+        foundSample.selected = YES;
+        foundSample.pulseIntensity = pulseIntensity;
+        foundSample.deltaTime = foundSample.time - lastFoundSample.time;
+        [self.foundPulses addObject:foundSample];
+        ZZLEDPulseDetection *detection = ZZLEDPulseDetection.alloc.init;
+        detection.detectedSamples = self.foundPulses.copy;
+        NSInteger detectedCount = detection.detectedSamples.count;
+        NSInteger maxUsingCount = 4;
+        if (detectedCount > maxUsingCount) {
+            detection.detectedSamples = [detection.detectedSamples subarrayWithRange:NSMakeRange(detectedCount - maxUsingCount, maxUsingCount)];
+        }
+        detectedCount = detection.detectedSamples.count;
+        if (detectedCount > 1) {
+            ZZLEDSignalSample *first = detection.detectedSamples.firstObject;
+            ZZLEDSignalSample *last = detection.detectedSamples.lastObject;
+            NSTimeInterval totalTimes = last.time - first.time;
+            float pulseCount = detectedCount - 1;
+            float pulsesPerMin = pulseCount / totalTimes * 60.0;
+            NSLog(@"pu:%f", pulsesPerMin);
+            detection.pulsePerMin = pulsesPerMin;
+        }
+        if (self.detectCallBack) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.detectCallBack(detection);
+            });
+        }
+    }
+    return;
+    /*
+    for (NSInteger emuIndex = 0 + steps; emuIndex + steps < count - 1; emuIndex++) {
+        
+        ZZLEDSignalSample *thisRoundFirstSample = usingSignals[emuIndex];
+        //
+        NSInteger endIndex = emuIndex;
+        // 取2秒钟的时间范围
+        NSTimeInterval beginTime = thisRoundFirstSample.time;
+        for (NSInteger i = 0; i < count - 1; i++) {
+            ZZLEDSignalSample *sig = usingSignals[i];
+            if (sig.time - beginTime >= 2.0) {
+                endIndex = i;
+                break;
+            }
+        }
+        // 找出一个区间内的最大值最小值
+        float max = -100000, min = 100000;
+        float currenMinDeltaThreshold = 0;
+        for (NSInteger i = emuIndex; i <= endIndex; i++) {
+            ZZLEDSignalSample *sig = usingSignals[i];
+            float val = sig.value;
+            if (val < min) {
+                min = val;
+            } else if (val > max) {
+                max = val;
+            }
+        }
+        currenMinDeltaThreshold = min - max;
+        float usingDeltaThreshold = currenMinDeltaThreshold * 0.5;
+        
+        ZZLEDSignalSample *lastCheckSample = thisRoundFirstSample;
         float delta = 0;
         for (NSInteger k = 1; k < steps; k++) {
-            ZZLEDColorSample *thisCheckSample = usingSignals[i + k];
+            ZZLEDSignalSample *thisCheckSample = usingSignals[emuIndex + k];
             float thisdelta = thisCheckSample.value - lastCheckSample.value;
-            delta += thisdelta;
+//            if (thisdelta > 0) {
+//                thisdelta = thisdelta * 0.2;
+//            }
+//            delta += thisdelta;
+            if (0 > thisdelta) {
+                delta += thisdelta;
+            }
             lastCheckSample = thisCheckSample;
         }
-        if (delta < 0) {
-            [foundPulses addObject:firstSampleForStep];
-            i += steps;
+        NSInteger selectedIndex = emuIndex + steps;
+        ZZLEDSignalSample *usingSample = usingSignals[selectedIndex];
+        if (delta < usingDeltaThreshold) {
+            // 找到了一个下降趋势，是否要找到下降最强的呢，还是直接采用？
+            [foundPulses addObject:usingSample];
+            usingSample.selected = YES;
+//            i += steps;
+            emuIndex = selectedIndex;
+            for (NSInteger nextIndex = selectedIndex; nextIndex < count - 1; nextIndex++) {
+                ZZLEDSignalSample *sig = usingSignals[nextIndex];
+                if (sig.time - usingSample.time >= 0.2) {
+                    emuIndex = nextIndex;
+                    break;
+                }
+            }
         }
     }
 
     ZZLEDPulseDetection *detection = ZZLEDPulseDetection.alloc.init;
+//    if (foundPulses.count > 2) {
+//        NSMutableArray *newArr = NSMutableArray.array;
+//        ZZLEDSignalSample *first = foundPulses[0];
+//        ZZLEDSignalSample *second = foundPulses[1];
+//        ZZLEDSignalSample *lastOne = second;
+//        NSTimeInterval lastTimeDelta = lastOne.timeInterval - first.timeInterval;
+//        newArr addObject:(nonnull id)
+//        for (NSInteger i = 2; i < foundPulses.count - 1; i ++) {
+//            ZZLEDSignalSample *sig = foundPulses[i];
+//            NSTimeInterval thisTimeDelta = sig.timeInterval - lastOne;
+//        }
+//    }
     if (foundPulses.count > 1) {
-        ZZLEDColorSample *first = foundPulses.firstObject;
-        ZZLEDColorSample *last = foundPulses.lastObject;
-        NSTimeInterval totalTimes = last.timeInterval - first.timeInterval;
+        ZZLEDSignalSample *first = foundPulses.firstObject;
+        ZZLEDSignalSample *last = foundPulses.lastObject;
+        NSTimeInterval totalTimes = last.time - first.time;
         float pulseCount = foundPulses.count - 1;
         float pulsesPerMin = pulseCount / totalTimes * 60.0;
         NSLog(@"pu:%f", pulsesPerMin);
@@ -222,10 +432,13 @@ const long kPreferSignalLength = 100;
             self.detectCallBack(detection);
         });
     }
+    //*/
 }
 
 /*
 - (void)calculateUsingFFT {
+    // 尝试用傅立叶变换求出频域，但样品不稳定，结果不理想或根本没有结果
+    // 摘抄自 https://developer.apple.com/documentation/accelerate/finding_the_component_frequencies_in_a_composite_sine_wave
     // fft
     
     // Create the Composite Signal
@@ -271,7 +484,6 @@ const long kPreferSignalLength = 100;
     for (int i = 0; i < halfN; i++) {
         float value = forwardOutputImag[i];
         if (value < -1) {
-            // 上面采样时把10秒钟的数据当成1秒钟了，于是频率增长了10倍
             int pulse = i;
     //                int pulse = (int)(1.0 / ((float)(i) / 10.0) * 60.0);
             [componentFrequencies addObject:@(pulse)];

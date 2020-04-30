@@ -50,16 +50,24 @@
                                     <constraint firstItem="LQu-wr-kcM" firstAttribute="centerX" secondItem="jJ2-xd-eaw" secondAttribute="centerX" id="SDE-77-2G6"/>
                                 </constraints>
                             </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="💚" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="FZC-at-JQ8">
+                                <rect key="frame" x="153" y="459" width="108" height="120"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="100"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstItem="5LQ-Ib-Akv" firstAttribute="leading" secondItem="jJ2-xd-eaw" secondAttribute="trailing" constant="8" id="1Fp-S6-aqt"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="5LQ-Ib-Akv" secondAttribute="bottom" constant="32" id="B6Z-6c-O1g"/>
                             <constraint firstItem="jJ2-xd-eaw" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="7" id="BaI-P9-SN4"/>
+                            <constraint firstItem="FZC-at-JQ8" firstAttribute="centerX" secondItem="99O-Fs-vGc" secondAttribute="centerX" id="U0r-7S-Dxx"/>
                             <constraint firstItem="5LQ-Ib-Akv" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="fPv-fG-ecJ"/>
                             <constraint firstItem="jJ2-xd-eaw" firstAttribute="top" secondItem="99O-Fs-vGc" secondAttribute="bottom" constant="8" id="kdQ-cC-1v0"/>
                             <constraint firstItem="5LQ-Ib-Akv" firstAttribute="top" secondItem="99O-Fs-vGc" secondAttribute="bottom" constant="32" id="lVh-QB-wcC"/>
                             <constraint firstItem="99O-Fs-vGc" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="mGs-lJ-Kxf"/>
+                            <constraint firstItem="FZC-at-JQ8" firstAttribute="centerY" secondItem="99O-Fs-vGc" secondAttribute="centerY" id="rdf-00-REG"/>
                             <constraint firstItem="jJ2-xd-eaw" firstAttribute="bottom" secondItem="6Tk-OE-BBY" secondAttribute="bottom" id="u6K-3H-789"/>
                             <constraint firstItem="99O-Fs-vGc" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="yCz-0D-5vW"/>
                         </constraints>
@@ -67,6 +75,7 @@
                     </view>
                     <connections>
                         <outlet property="drawView" destination="99O-Fs-vGc" id="ewO-Wi-9AR"/>
+                        <outlet property="heartView" destination="FZC-at-JQ8" id="LZP-xt-1fz"/>
                         <outlet property="textLabel" destination="LQu-wr-kcM" id="sbY-dG-RMj"/>
                     </connections>
                 </viewController>

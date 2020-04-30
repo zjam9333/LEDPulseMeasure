@@ -11,18 +11,18 @@
 
 @implementation TestFFT
 
-/*
+//*
 + (void)load {
     // test fft
     
     // Create the Composite Signal
-    vDSP_Length n = 1024;
-    float frequencies[10] = {1, 5, 25, 30, 75, 100, 300, 500, 512, 1023};
+    vDSP_Length n = 512;
+    float frequencies[6] = {1, 5, 25, 30, 75, 123};
     float tau = M_PI * 2;
     float signal[n];
     for (int i = 0; i < n; i++) {
         float accumulator = 0;
-        for (int k = 0; k < 10; k ++) {
+        for (int k = 0; k < 6; k ++) {
             float normalizedIndex = (float)(i) / (float)(n);
             float frequency = frequencies[k];
             accumulator += sinf(normalizedIndex * frequency * tau);
