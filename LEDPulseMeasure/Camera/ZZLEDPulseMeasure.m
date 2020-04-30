@@ -261,11 +261,13 @@ const long kMaxSignalSampleCount = 60;
     
     // 找到上一次脉冲
     ZZLEDSignalSample *lastFoundSample = nil;
+    // 超过这个时间的是为过期的记录
+    NSTimeInterval outDateInterval = 2.1;
     NSTimeInterval nowTime = NSDate.timeIntervalSinceReferenceDate;
     NSInteger lastFoundIndex = 0;
     for (NSInteger emuIndex = count - 1; emuIndex >= 0; emuIndex--) {
         ZZLEDSignalSample *sig = usingSignals[emuIndex];
-        if (sig.selected && (nowTime - sig.time < 2.0)) {
+        if (sig.selected && (nowTime - sig.time < outDateInterval)) {
             lastFoundSample = sig;
             lastFoundIndex = emuIndex;
             break;
@@ -277,8 +279,11 @@ const long kMaxSignalSampleCount = 60;
         if (count > preferTailCount) {
             lastFoundIndex = count - preferTailCount;
         }
+        // 没有上一个脉冲记录，或已过时，则清理全部记录
+        [self.foundPulses removeAllObjects];
     }
     
+    // 找一个下降点和上升点，暂且认为是一个脉冲
     NSInteger dropingIndex = 0;
     NSInteger risingIndex = 0;
     ZZLEDSignalSample *lastCheckSample = lastFoundSample;
@@ -290,8 +295,8 @@ const long kMaxSignalSampleCount = 60;
         lastCheckSample = sig;
         if (delta < 0) {
             // start droping?
-            if (delta < lastFoundSample.pulseIntensity * 0.25) {
-                pulseIntensity += delta;
+            pulseIntensity += delta;
+            if (pulseIntensity < lastFoundSample.pulseIntensity * 0.25) {
                 // start
                 if (delta < lastDelta) {
                     lastDelta = delta;
@@ -301,37 +306,49 @@ const long kMaxSignalSampleCount = 60;
                 }
             }
         }
-        if (dropingIndex > 0) {
-            if (delta >= 0) {
-                risingIndex = emuIndex;
-                break;
-            }
+        else if (dropingIndex > 0) {
+            risingIndex = emuIndex;
+            break;
         }
     }
     if (dropingIndex > 0 && risingIndex > dropingIndex) {
         NSInteger usingIndex = (dropingIndex + risingIndex) / 2;
-        NSLog(@"found:%@", @(arc4random()));
+//        NSLog(@"found:%@", @(arc4random()));
         ZZLEDSignalSample *foundSample = usingSignals[usingIndex];
+        if (lastFoundSample) {
+            NSTimeInterval deltaTime = foundSample.time - lastFoundSample.time;
+            if (lastFoundSample.deltaTime > 0 && lastFoundSample.deltaTime < outDateInterval) {
+                float rate = deltaTime / lastFoundSample.deltaTime;
+                if (rate < 0.7 || rate > 1.6) {
+                    // 保证周期基本平稳，与上一个比较
+                    return;
+                }
+            } else {
+                lastFoundSample.deltaTime = deltaTime;
+            }
+            foundSample.deltaTime = deltaTime;
+        }
         foundSample.selected = YES;
         foundSample.pulseIntensity = pulseIntensity;
-        foundSample.deltaTime = foundSample.time - lastFoundSample.time;
         [self.foundPulses addObject:foundSample];
         ZZLEDPulseDetection *detection = ZZLEDPulseDetection.alloc.init;
-        detection.detectedSamples = self.foundPulses.copy;
-        NSInteger detectedCount = detection.detectedSamples.count;
-        NSInteger maxUsingCount = 4;
+        NSMutableArray *calculatedPulses = self.foundPulses.mutableCopy;
+        NSInteger detectedCount = calculatedPulses.count;
+        NSInteger maxUsingCount = 5;
         if (detectedCount > maxUsingCount) {
-            detection.detectedSamples = [detection.detectedSamples subarrayWithRange:NSMakeRange(detectedCount - maxUsingCount, maxUsingCount)];
+            [calculatedPulses removeObjectsInRange:NSMakeRange(0, detectedCount - maxUsingCount)];
+//            detection.detectedSamples = [detection.detectedSamples subarrayWithRange:NSMakeRange(detectedCount - maxUsingCount, maxUsingCount)];
+            detectedCount = maxUsingCount;
         }
-        detectedCount = detection.detectedSamples.count;
         if (detectedCount > 1) {
-            ZZLEDSignalSample *first = detection.detectedSamples.firstObject;
-            ZZLEDSignalSample *last = detection.detectedSamples.lastObject;
+            ZZLEDSignalSample *first = calculatedPulses.firstObject;
+            ZZLEDSignalSample *last = calculatedPulses.lastObject;
             NSTimeInterval totalTimes = last.time - first.time;
             float pulseCount = detectedCount - 1;
             float pulsesPerMin = pulseCount / totalTimes * 60.0;
             NSLog(@"pu:%f", pulsesPerMin);
             detection.pulsePerMin = pulsesPerMin;
+            detection.detectedSamples = calculatedPulses;
         }
         if (self.detectCallBack) {
             dispatch_async(dispatch_get_main_queue(), ^{
