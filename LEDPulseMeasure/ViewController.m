@@ -15,6 +15,7 @@
 @property (weak, nonatomic) IBOutlet UIView *drawView;
 @property (weak, nonatomic) IBOutlet UILabel *textLabel;
 @property (weak, nonatomic) IBOutlet UILabel *heartView;
+@property (weak, nonatomic) IBOutlet UISegmentedControl *stateIndicator;
 
 @end
 
@@ -25,7 +26,7 @@
     
     self.measure = ZZLEDPulseMeasure.alloc.init;
     self.measure.previewLayer.frame = CGRectMake(0, 0, 100, 100);
-    [self.view.layer addSublayer:self.measure.previewLayer];
+    [self.view.layer insertSublayer:self.measure.previewLayer atIndex:0];
     
     UIView *view = self.drawView;
     self.measure.sampleCallBack = ^(ZZLEDSignalSample * _Nonnull sample) {
@@ -48,7 +49,6 @@
     UILabel *label = self.textLabel;
     UIView *heartView = self.heartView;
     self.measure.detectCallBack = ^(ZZLEDPulseDetection * _Nonnull detection) {
-        label.text = @((int)(detection.pulsePerMin)).stringValue;
         UIView *pointv = detection.detectedSamples.lastObject.pointView;
         pointv.backgroundColor = UIColor.redColor;
         pointv.transform = CGAffineTransformMakeScale(4, 4);
@@ -56,6 +56,13 @@
         [UIView animateWithDuration:0.2 animations:^{
             heartView.transform = CGAffineTransformMakeScale(1, 1);
         }];
+    };
+    self.measure.measureCallBack = ^(ZZLEDPulseDetection * _Nonnull detection) {
+        label.text = @((int)(detection.pulsePerMin)).stringValue;
+    };
+    UISegmentedControl *seg = self.stateIndicator;
+    self.measure.stateCallBack = ^(ZZLEDPulseMeasureState state) {
+        seg.selectedSegmentIndex = state;
     };
 }
 

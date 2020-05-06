@@ -32,7 +32,7 @@
 @end
 
 const long kMinSignalSampleCount = 30;
-const long kMaxSignalSampleCount = 60;
+const long kMaxSignalSampleCount = 150;
 
 @interface ZZLEDPulseMeasure ()<AVCaptureVideoDataOutputSampleBufferDelegate>
 
@@ -86,6 +86,41 @@ const long kMaxSignalSampleCount = 60;
     }
 }
 
+#pragma mark - set
+
+//static NSDictionary *stateStrings = nil;
+
+- (void)setState:(ZZLEDPulseMeasureState)state {
+    ZZLEDPulseMeasureState oldOne = _state;
+    _state = state;
+    if (oldOne != _state) {
+        // 状态变了
+//        if (stateStrings == nil) {
+//            stateStrings = @{
+//                @(ZZLEDPulseMeasureStateNothing):@"Nothing",
+//                @(ZZLEDPulseMeasureStatePrepared):@"Prepared",
+//                @(ZZLEDPulseMeasureStateMeasuring):@"Counting",
+//                @(ZZLEDPulseMeasureStateCompleted):@"Completed",
+//            };
+//        }
+//        NSLog(@"state: %@", stateStrings[@(state)]);
+        if (self.stateCallBack) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.stateCallBack(state);
+            });
+        }
+    }
+}
+
+- (void)setStateCallBack:(ZZLEDPulseStateCallBack)stateCallBack {
+    _stateCallBack = stateCallBack;
+    if (stateCallBack) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            stateCallBack(self.state);
+        });
+    }
+}
+
 #pragma mark - init
 
 - (instancetype)init {
@@ -113,7 +148,8 @@ const long kMaxSignalSampleCount = 60;
     }
     
     self.previewLayer = [AVCaptureVideoPreviewLayer layerWithSession:self.session];
-    self.previewLayer.videoGravity = AVLayerVideoGravityResize;
+    self.previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+    self.previewLayer.masksToBounds = YES;
     
     [self setupSignalProcess];
 }
@@ -147,6 +183,7 @@ const long kMaxSignalSampleCount = 60;
             red += data[pixelIndex + 2];
         }
     }
+    CVPixelBufferUnlockBaseAddress(cvimg, 0);
     red = red / pixelCount / 255;
     green = green / pixelCount / 255;
     blue = blue / pixelCount / 255;
@@ -157,6 +194,19 @@ const long kMaxSignalSampleCount = 60;
     ZZLEDSignalSample *sample = [[ZZLEDSignalSample alloc] init];
     sample.time = NSDate.timeIntervalSinceReferenceDate;
     sample.value = green;
+//    NSLog(@"hue:%.02f, sat:%.02f, bri:%.02f", hue, saturation, brightness);
+    // 检查手指是否放好（色相红色，饱和度高，亮度高）
+    BOOL isRedColor = hue < 0.1 || hue > 0.9;
+    BOOL isHighSaturation = saturation > 0.7;
+    BOOL isHighBrightness = brightness > 0.7;
+    BOOL gotFinger = isRedColor && isHighSaturation && isHighBrightness;
+    if (gotFinger) {
+        if (self.state == ZZLEDPulseMeasureStateNothing) {
+            self.state = ZZLEDPulseMeasureStatePrepared;
+        }
+    } else {
+        self.state = ZZLEDPulseMeasureStateNothing;
+    }
     [self handleSignalSample:sample];
     
     // test which channel is the best
@@ -210,7 +260,6 @@ const long kMaxSignalSampleCount = 60;
 //        [self handleSignalSample:sample];
 //    }
     
-    CVPixelBufferUnlockBaseAddress(cvimg, 0);
 }
 
 #pragma mark - handleSignalSample
@@ -248,6 +297,10 @@ const long kMaxSignalSampleCount = 60;
 }
 
 - (void)calculateInMyWay {
+    if (self.state < ZZLEDPulseMeasureStatePrepared) {
+        return;
+    }
+    
     // 已知波动是有规律的，一个周期内，缓慢上升，极速下降
     // 目标是找出下降的位置
     // 以n个点为一组，计算出相邻两点的差，若差的和小于某个阈值，说明有下降趋势，要注意是不是噪声导致的下降
@@ -321,6 +374,9 @@ const long kMaxSignalSampleCount = 60;
                 float rate = deltaTime / lastFoundSample.deltaTime;
                 if (rate < 0.7 || rate > 1.6) {
                     // 保证周期基本平稳，与上一个比较
+                    // 与上一个失去了联系
+                    // 恢复到prepard
+                    self.state = ZZLEDPulseMeasureStatePrepared;
                     return;
                 }
             } else {
@@ -334,7 +390,7 @@ const long kMaxSignalSampleCount = 60;
         ZZLEDPulseDetection *detection = ZZLEDPulseDetection.alloc.init;
         NSMutableArray *calculatedPulses = self.foundPulses.mutableCopy;
         NSInteger detectedCount = calculatedPulses.count;
-        NSInteger maxUsingCount = 5;
+        NSInteger maxUsingCount = 10;
         if (detectedCount > maxUsingCount) {
             [calculatedPulses removeObjectsInRange:NSMakeRange(0, detectedCount - maxUsingCount)];
 //            detection.detectedSamples = [detection.detectedSamples subarrayWithRange:NSMakeRange(detectedCount - maxUsingCount, maxUsingCount)];
@@ -346,9 +402,20 @@ const long kMaxSignalSampleCount = 60;
             NSTimeInterval totalTimes = last.time - first.time;
             float pulseCount = detectedCount - 1;
             float pulsesPerMin = pulseCount / totalTimes * 60.0;
-            NSLog(@"pu:%f", pulsesPerMin);
+//            NSLog(@"pu:%f", pulsesPerMin);
             detection.pulsePerMin = pulsesPerMin;
             detection.detectedSamples = calculatedPulses;
+        }
+        // 当存在几个连续的检测点时
+        // 变成counting状态
+        NSInteger minUsingCount = 3;
+        if (detectedCount >= minUsingCount) {
+            self.state = ZZLEDPulseMeasureStateMeasuring;
+            if (self.measureCallBack) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    self.measureCallBack(detection);
+                });
+            }
         }
         if (self.detectCallBack) {
             dispatch_async(dispatch_get_main_queue(), ^{

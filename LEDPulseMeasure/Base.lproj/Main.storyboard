@@ -16,13 +16,19 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5LQ-Ib-Akv">
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" adjustsImageSizeForAccessibilityContentSizeCategory="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5LQ-Ib-Akv">
                                 <rect key="frame" x="171" y="758" width="72" height="72"/>
-                                <color key="backgroundColor" systemColor="linkColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="72" id="7Hi-5o-KZR"/>
                                     <constraint firstAttribute="width" secondItem="5LQ-Ib-Akv" secondAttribute="height" id="8wV-7J-DE9"/>
                                 </constraints>
+                                <state key="normal" image="camera.fill" catalog="system"/>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <integer key="value" value="36"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
                                 <connections>
                                     <action selector="captureButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="1Wk-qL-NA9"/>
                                 </connections>
@@ -56,6 +62,16 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <segmentedControl opaque="NO" userInteractionEnabled="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="bXQ-Ke-VWK">
+                                <rect key="frame" x="78.5" y="64" width="257" height="32"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <segments>
+                                    <segment title="请放置手指"/>
+                                    <segment title="检测到手指"/>
+                                    <segment title="正在测量"/>
+                                </segments>
+                                <color key="selectedSegmentTintColor" systemColor="systemRedColor" red="1" green="0.23137254900000001" blue="0.18823529410000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            </segmentedControl>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
@@ -63,10 +79,12 @@
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="5LQ-Ib-Akv" secondAttribute="bottom" constant="32" id="B6Z-6c-O1g"/>
                             <constraint firstItem="jJ2-xd-eaw" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="7" id="BaI-P9-SN4"/>
                             <constraint firstItem="FZC-at-JQ8" firstAttribute="centerX" secondItem="99O-Fs-vGc" secondAttribute="centerX" id="U0r-7S-Dxx"/>
+                            <constraint firstItem="bXQ-Ke-VWK" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="20" id="f9s-4r-9Sg"/>
                             <constraint firstItem="5LQ-Ib-Akv" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="fPv-fG-ecJ"/>
                             <constraint firstItem="jJ2-xd-eaw" firstAttribute="top" secondItem="99O-Fs-vGc" secondAttribute="bottom" constant="8" id="kdQ-cC-1v0"/>
                             <constraint firstItem="5LQ-Ib-Akv" firstAttribute="top" secondItem="99O-Fs-vGc" secondAttribute="bottom" constant="32" id="lVh-QB-wcC"/>
                             <constraint firstItem="99O-Fs-vGc" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="mGs-lJ-Kxf"/>
+                            <constraint firstItem="bXQ-Ke-VWK" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="nDT-Nd-54I"/>
                             <constraint firstItem="FZC-at-JQ8" firstAttribute="centerY" secondItem="99O-Fs-vGc" secondAttribute="centerY" id="rdf-00-REG"/>
                             <constraint firstItem="jJ2-xd-eaw" firstAttribute="bottom" secondItem="6Tk-OE-BBY" secondAttribute="bottom" id="u6K-3H-789"/>
                             <constraint firstItem="99O-Fs-vGc" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="yCz-0D-5vW"/>
@@ -76,6 +94,7 @@
                     <connections>
                         <outlet property="drawView" destination="99O-Fs-vGc" id="ewO-Wi-9AR"/>
                         <outlet property="heartView" destination="FZC-at-JQ8" id="LZP-xt-1fz"/>
+                        <outlet property="stateIndicator" destination="bXQ-Ke-VWK" id="7ZN-zi-Gda"/>
                         <outlet property="textLabel" destination="LQu-wr-kcM" id="sbY-dG-RMj"/>
                     </connections>
                 </viewController>
@@ -84,4 +103,7 @@
             <point key="canvasLocation" x="131.8840579710145" y="112.5"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="camera.fill" catalog="system" width="64" height="48"/>
+    </resources>
 </document>
