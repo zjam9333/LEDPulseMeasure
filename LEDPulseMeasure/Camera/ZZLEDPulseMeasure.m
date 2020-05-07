@@ -7,7 +7,6 @@
 //
 
 #import "ZZLEDPulseMeasure.h"
-#import <Accelerate/Accelerate.h>
 
 @implementation ZZLEDSignalSample
 
@@ -32,12 +31,12 @@
 @end
 
 const long kMinSignalSampleCount = 4;
-const long kMaxSignalSampleCount = 7;
-const float kPulseIntensityThreshold = 0.25;
-const float kMinDeltaTimeThreshold = 0.7;
-const float kMaxDeltaTimeThreshold = 1.5;
+const long kMaxSignalSampleCount = 10;
+const float kPulseIntensityThreshold = 0.4;
+const float kMinDeltaTimeThreshold = 0.8;
+const float kMaxDeltaTimeThreshold = 1.3;
 const NSInteger kMinDetectedUsingCount = 3;
-const NSInteger kMaxDetectedUsingCount = 10;
+const NSInteger kMaxDetectedUsingCount = 5;
 const NSTimeInterval kOutDateTimeInterval = 2.5;
 
 @interface ZZLEDPulseMeasure ()<AVCaptureVideoDataOutputSampleBufferDelegate>
@@ -51,7 +50,6 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
 
 @property (nonatomic, strong) AVCaptureVideoPreviewLayer *previewLayer;
 
-@property (nonatomic, assign) FFTSetup signalFFTSetup;
 @property (nonatomic, strong) NSMutableArray *signals;
 @property (nonatomic, strong) NSMutableArray *foundPulses;
 
@@ -61,9 +59,6 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
 
 - (void)dealloc {
     [self stop];
-    if (self.signalFFTSetup) {
-        vDSP_destroy_fftsetup(self.signalFFTSetup);
-    }
 }
 
 #pragma mark - get
@@ -140,6 +135,14 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
     [self.session setSessionPreset:AVCaptureSessionPresetLow];
     
     self.device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    // 锁定白平衡和曝光！很重要！使得信号更平稳
+    [self.device lockForConfiguration:nil];
+    [self.device setExposureModeCustomWithDuration:AVCaptureExposureDurationCurrent ISO:AVCaptureISOCurrent completionHandler:^(CMTime syncTime) {
+        
+    }];
+    self.device.whiteBalanceMode = AVCaptureWhiteBalanceModeLocked;
+    [self.device unlockForConfiguration];
+    
     self.input = [AVCaptureDeviceInput deviceInputWithDevice:self.device error:nil];
     if ([self.session canAddInput:self.input]) {
         [self.session addInput:self.input];
@@ -199,12 +202,12 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
     
     ZZLEDSignalSample *sample = [[ZZLEDSignalSample alloc] init];
     sample.time = NSDate.timeIntervalSinceReferenceDate;
-    sample.value = green;
+    sample.value = brightness;
 //    NSLog(@"hue:%.02f, sat:%.02f, bri:%.02f", hue, saturation, brightness);
     // 检查手指是否放好（色相红色，饱和度高，亮度高）
     BOOL isRedColor = hue < 0.1 || hue > 0.9;
     BOOL isHighSaturation = saturation > 0.7;
-    BOOL isHighBrightness = brightness > 0.7;
+    BOOL isHighBrightness = brightness > 0.4;
     BOOL gotFinger = isRedColor && isHighSaturation && isHighBrightness;
     if (gotFinger) {
         if (self.state == ZZLEDPulseMeasureStateNothing) {
@@ -214,9 +217,6 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
         self.state = ZZLEDPulseMeasureStateNothing;
     }
     [self handleSignalSample:sample];
-    
-    // test which channel is the best
-    // 实验证明绿色较好
 }
 
 #pragma mark - handleSignalSample
@@ -242,7 +242,7 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
     }
     // 保证最大样品数量
     if (count > kMaxSignalSampleCount) {
-        [self.signals removeObjectsInRange:NSMakeRange(0, kMaxSignalSampleCount / 5)];
+        [self.signals removeObjectsInRange:NSMakeRange(0, count - kMaxSignalSampleCount)];
 //        [self.signals removeObjectAtIndex:0];
     }
     
@@ -271,11 +271,11 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
     
     // 找到上一次脉冲
     ZZLEDSignalSample *lastFoundSample = self.foundPulses.lastObject;
-    // 超过这个时间的是为过期的记录
     NSTimeInterval outDateInterval = kOutDateTimeInterval;
     NSTimeInterval nowTime = NSDate.timeIntervalSinceReferenceDate;
     NSInteger lastFoundIndex = 0;
     if (nowTime - lastFoundSample.time > outDateInterval) {
+        // 超过这个时间的是为过期的记录，需要重新计数
         lastFoundSample = nil;
         [self.foundPulses removeAllObjects];
     } else {
@@ -290,7 +290,8 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
     ZZLEDSignalSample *lastCheckSample = lastFoundSample;
     float pulseIntensity = 0;
     float lastDelta = 0;
-    for (NSInteger emuIndex = lastFoundIndex + 1; emuIndex < count - 1; emuIndex++) {
+    NSInteger startEmuIndex = lastFoundIndex + 1;
+    for (NSInteger emuIndex = startEmuIndex; emuIndex < count - 1; emuIndex++) {
         ZZLEDSignalSample *sig = usingSignals[emuIndex];
         float delta = sig.value - lastCheckSample.value;
         lastCheckSample = sig;
@@ -312,12 +313,13 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
             break;
         }
     }
-    if (dropingIndex > 0 && risingIndex > dropingIndex) {
-        NSInteger usingIndex = (dropingIndex + risingIndex) / 2;
+    if (dropingIndex > startEmuIndex && risingIndex > dropingIndex) {
+        NSInteger usingIndex = risingIndex;//(dropingIndex + risingIndex) / 2;
 //        NSLog(@"found:%@", @(arc4random()));
         ZZLEDSignalSample *foundSample = usingSignals[usingIndex];
         if (lastFoundSample) {
             NSTimeInterval deltaTime = foundSample.time - lastFoundSample.time;
+            foundSample.deltaTime = deltaTime;
             if (lastFoundSample.deltaTime > 0 && lastFoundSample.deltaTime < outDateInterval) {
                 float rate = deltaTime / lastFoundSample.deltaTime;
                 if (rate < kMinDeltaTimeThreshold || rate > kMaxDeltaTimeThreshold) {
@@ -326,12 +328,13 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
                     // 恢复到prepard
                     self.state = ZZLEDPulseMeasureStatePrepared;
                     [self.foundPulses removeAllObjects];
-                    return;
+                    [self.foundPulses addObject:foundSample];
+                    foundSample.deltaTime = 0;
+                    NSLog(@"out date");
                 }
             } else {
                 lastFoundSample.deltaTime = deltaTime;
             }
-            foundSample.deltaTime = deltaTime;
         }
         foundSample.selected = YES;
         foundSample.pulseIntensity = pulseIntensity;
