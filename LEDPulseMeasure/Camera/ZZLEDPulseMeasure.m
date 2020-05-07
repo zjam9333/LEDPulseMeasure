@@ -33,6 +33,12 @@
 
 const long kMinSignalSampleCount = 4;
 const long kMaxSignalSampleCount = 7;
+const float kPulseIntensityThreshold = 0.25;
+const float kMinDeltaTimeThreshold = 0.7;
+const float kMaxDeltaTimeThreshold = 1.5;
+const NSInteger kMinDetectedUsingCount = 3;
+const NSInteger kMaxDetectedUsingCount = 10;
+const NSTimeInterval kOutDateTimeInterval = 2.5;
 
 @interface ZZLEDPulseMeasure ()<AVCaptureVideoDataOutputSampleBufferDelegate>
 
@@ -211,55 +217,6 @@ const long kMaxSignalSampleCount = 7;
     
     // test which channel is the best
     // 实验证明绿色较好
-    /*
-    if (self.sampleCallBack) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            // test r, g, b, h, s, v
-            ZZLEDSignalSample *sample = [[ZZLEDSignalSample alloc] init];
-            sample.value = green;
-            sample.color = UIColor.greenColor;
-            self.sampleCallBack(sample);
-            
-            sample = [[ZZLEDSignalSample alloc] init];
-            sample.value = red;
-            sample.color = UIColor.redColor;
-            self.sampleCallBack(sample);
-            
-            sample = [[ZZLEDSignalSample alloc] init];
-            sample.value = blue;
-            sample.color = UIColor.blueColor;
-            self.sampleCallBack(sample);
-            
-            sample = [[ZZLEDSignalSample alloc] init];
-            sample.value = hue;
-            sample.color = UIColor.yellowColor;
-            self.sampleCallBack(sample);
-            sample = [[ZZLEDSignalSample alloc] init];
-            sample.value = brightness;
-            sample.color = UIColor.whiteColor;
-            self.sampleCallBack(sample);
-            sample = [[ZZLEDSignalSample alloc] init];
-            sample.value = saturation;
-            sample.color = UIColor.magentaColor;
-            self.sampleCallBack(sample);
-        });
-    }
-     //*/
-//    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-//
-//        ZZLEDSignalSample *sample = [[ZZLEDSignalSample alloc] init];
-//        sample.timeInterval = NSDate.timeIntervalSinceReferenceDate;
-//        sample.hue = hue;
-//        sample.saturation = saturation;
-//        sample.brightness = brightness;
-//        [self handleSignalSample:sample];
-//    });
-//    static int a;
-//    a ++;
-//    if (a % 2 == 0) {
-//        [self handleSignalSample:sample];
-//    }
-    
 }
 
 #pragma mark - handleSignalSample
@@ -315,7 +272,7 @@ const long kMaxSignalSampleCount = 7;
     // 找到上一次脉冲
     ZZLEDSignalSample *lastFoundSample = self.foundPulses.lastObject;
     // 超过这个时间的是为过期的记录
-    NSTimeInterval outDateInterval = 2.1;
+    NSTimeInterval outDateInterval = kOutDateTimeInterval;
     NSTimeInterval nowTime = NSDate.timeIntervalSinceReferenceDate;
     NSInteger lastFoundIndex = 0;
     if (nowTime - lastFoundSample.time > outDateInterval) {
@@ -326,25 +283,6 @@ const long kMaxSignalSampleCount = 7;
             lastFoundIndex = [self.signals indexOfObject:lastFoundSample];
         }
     }
-    /*
-    for (NSInteger emuIndex = count - 1; emuIndex >= 0; emuIndex--) {
-        ZZLEDSignalSample *sig = usingSignals[emuIndex];
-        if (sig.selected && (nowTime - sig.time < outDateInterval)) {
-            lastFoundSample = sig;
-            lastFoundIndex = emuIndex;
-            break;
-        }
-    }
-    if (lastFoundIndex == 0) {
-        NSInteger preferTailCount = 5;
-        // 多少个样本足以判断一个脉冲？
-        if (count > preferTailCount) {
-            lastFoundIndex = count - preferTailCount;
-        }
-        // 没有上一个脉冲记录，或已过时，则清理全部记录
-        [self.foundPulses removeAllObjects];
-    }
-     */
     
     // 找一个下降点和上升点，暂且认为是一个脉冲
     NSInteger dropingIndex = 0;
@@ -359,7 +297,7 @@ const long kMaxSignalSampleCount = 7;
         if (delta < 0) {
             // start droping?
             pulseIntensity += delta;
-            if (pulseIntensity < lastFoundSample.pulseIntensity * 0.25) {
+            if (pulseIntensity < lastFoundSample.pulseIntensity * kPulseIntensityThreshold) {
                 // start
                 if (delta < lastDelta) {
                     lastDelta = delta;
@@ -382,11 +320,12 @@ const long kMaxSignalSampleCount = 7;
             NSTimeInterval deltaTime = foundSample.time - lastFoundSample.time;
             if (lastFoundSample.deltaTime > 0 && lastFoundSample.deltaTime < outDateInterval) {
                 float rate = deltaTime / lastFoundSample.deltaTime;
-                if (rate < 0.7 || rate > 1.6) {
+                if (rate < kMinDeltaTimeThreshold || rate > kMaxDeltaTimeThreshold) {
                     // 保证周期基本平稳，与上一个比较
                     // 与上一个失去了联系
                     // 恢复到prepard
                     self.state = ZZLEDPulseMeasureStatePrepared;
+                    [self.foundPulses removeAllObjects];
                     return;
                 }
             } else {
@@ -400,7 +339,7 @@ const long kMaxSignalSampleCount = 7;
         ZZLEDPulseDetection *detection = ZZLEDPulseDetection.alloc.init;
         NSMutableArray *calculatedPulses = self.foundPulses.mutableCopy;
         NSInteger detectedCount = calculatedPulses.count;
-        NSInteger maxUsingCount = 5;
+        NSInteger maxUsingCount = kMaxDetectedUsingCount;
         if (detectedCount > maxUsingCount) {
             [calculatedPulses removeObjectsInRange:NSMakeRange(0, detectedCount - maxUsingCount)];
 //            detection.detectedSamples = [detection.detectedSamples subarrayWithRange:NSMakeRange(detectedCount - maxUsingCount, maxUsingCount)];
@@ -418,7 +357,7 @@ const long kMaxSignalSampleCount = 7;
         }
         // 当存在几个连续的检测点时
         // 变成counting状态
-        NSInteger minUsingCount = 3;
+        NSInteger minUsingCount = kMinDetectedUsingCount;
         if (detectedCount >= minUsingCount) {
             self.state = ZZLEDPulseMeasureStateMeasuring;
             if (self.measureCallBack) {
@@ -433,158 +372,6 @@ const long kMaxSignalSampleCount = 7;
             });
         }
     }
-    return;
-    /*
-    for (NSInteger emuIndex = 0 + steps; emuIndex + steps < count - 1; emuIndex++) {
-        
-        ZZLEDSignalSample *thisRoundFirstSample = usingSignals[emuIndex];
-        //
-        NSInteger endIndex = emuIndex;
-        // 取2秒钟的时间范围
-        NSTimeInterval beginTime = thisRoundFirstSample.time;
-        for (NSInteger i = 0; i < count - 1; i++) {
-            ZZLEDSignalSample *sig = usingSignals[i];
-            if (sig.time - beginTime >= 2.0) {
-                endIndex = i;
-                break;
-            }
-        }
-        // 找出一个区间内的最大值最小值
-        float max = -100000, min = 100000;
-        float currenMinDeltaThreshold = 0;
-        for (NSInteger i = emuIndex; i <= endIndex; i++) {
-            ZZLEDSignalSample *sig = usingSignals[i];
-            float val = sig.value;
-            if (val < min) {
-                min = val;
-            } else if (val > max) {
-                max = val;
-            }
-        }
-        currenMinDeltaThreshold = min - max;
-        float usingDeltaThreshold = currenMinDeltaThreshold * 0.5;
-        
-        ZZLEDSignalSample *lastCheckSample = thisRoundFirstSample;
-        float delta = 0;
-        for (NSInteger k = 1; k < steps; k++) {
-            ZZLEDSignalSample *thisCheckSample = usingSignals[emuIndex + k];
-            float thisdelta = thisCheckSample.value - lastCheckSample.value;
-//            if (thisdelta > 0) {
-//                thisdelta = thisdelta * 0.2;
-//            }
-//            delta += thisdelta;
-            if (0 > thisdelta) {
-                delta += thisdelta;
-            }
-            lastCheckSample = thisCheckSample;
-        }
-        NSInteger selectedIndex = emuIndex + steps;
-        ZZLEDSignalSample *usingSample = usingSignals[selectedIndex];
-        if (delta < usingDeltaThreshold) {
-            // 找到了一个下降趋势，是否要找到下降最强的呢，还是直接采用？
-            [foundPulses addObject:usingSample];
-            usingSample.selected = YES;
-//            i += steps;
-            emuIndex = selectedIndex;
-            for (NSInteger nextIndex = selectedIndex; nextIndex < count - 1; nextIndex++) {
-                ZZLEDSignalSample *sig = usingSignals[nextIndex];
-                if (sig.time - usingSample.time >= 0.2) {
-                    emuIndex = nextIndex;
-                    break;
-                }
-            }
-        }
-    }
-
-    ZZLEDPulseDetection *detection = ZZLEDPulseDetection.alloc.init;
-//    if (foundPulses.count > 2) {
-//        NSMutableArray *newArr = NSMutableArray.array;
-//        ZZLEDSignalSample *first = foundPulses[0];
-//        ZZLEDSignalSample *second = foundPulses[1];
-//        ZZLEDSignalSample *lastOne = second;
-//        NSTimeInterval lastTimeDelta = lastOne.timeInterval - first.timeInterval;
-//        newArr addObject:(nonnull id)
-//        for (NSInteger i = 2; i < foundPulses.count - 1; i ++) {
-//            ZZLEDSignalSample *sig = foundPulses[i];
-//            NSTimeInterval thisTimeDelta = sig.timeInterval - lastOne;
-//        }
-//    }
-    if (foundPulses.count > 1) {
-        ZZLEDSignalSample *first = foundPulses.firstObject;
-        ZZLEDSignalSample *last = foundPulses.lastObject;
-        NSTimeInterval totalTimes = last.time - first.time;
-        float pulseCount = foundPulses.count - 1;
-        float pulsesPerMin = pulseCount / totalTimes * 60.0;
-        NSLog(@"pu:%f", pulsesPerMin);
-        detection.detectedSamples = foundPulses;
-        detection.pulsePerMin = pulsesPerMin;
-    } else {
-        detection.failed = YES;
-    }
-    if (self.detectCallBack) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.detectCallBack(detection);
-        });
-    }
-    //*/
 }
-
-/*
-- (void)calculateUsingFFT {
-    // 尝试用傅立叶变换求出频域，但样品不稳定，结果不理想或根本没有结果
-    // 摘抄自 https://developer.apple.com/documentation/accelerate/finding_the_component_frequencies_in_a_composite_sine_wave
-    // fft
-    
-    // Create the Composite Signal
-    vDSP_Length n = self.signals.count;
-    float signal[n];
-    for (int i = 0; i < n; i++) {
-        float val = [[self.signals objectAtIndex:i] brightness];
-        val = (val - 128) * 10;
-        signal[i] = val;
-    }
-
-    // Create the FFT Setup
-    vDSP_Length log2n = log2(n);
-    if (self.signalFFTSetup == nil) {
-        self.signalFFTSetup = vDSP_create_fftsetup(log2n, kFFTRadix2);
-    }
-    FFTSetup fftSetUp = self.signalFFTSetup;
-    
-    // Create the Source and Destination Arrays for the Forward FFT
-    vDSP_Length halfN = n / 2;
-    float forwardInputReal[halfN];
-    float forwardInputImag[halfN];
-    float forwardOutputReal[halfN];
-    float forwardOutputImag[halfN];
-
-    // Perform the Forward FFT
-    DSPSplitComplex forwardInput;
-    forwardInput.realp = forwardInputReal;
-    forwardInput.imagp = forwardInputImag;
-    for (int i = 0; i < halfN; i++) {
-        float real = signal[2 * i];
-        float imag = signal[2 * i + 1];
-        forwardInput.realp[i] = real;
-        forwardInput.imagp[i] = imag;
-    }
-    DSPSplitComplex forwardOutput;
-    forwardOutput.realp = forwardOutputReal;
-    forwardOutput.imagp = forwardOutputImag;
-    vDSP_fft_zrop(fftSetUp, &forwardInput, 1, &forwardOutput, 1, log2n, kFFTDirection_Forward);
-
-    // Compute Component Frequencies in Frequency Domain
-    NSMutableArray *componentFrequencies = NSMutableArray.array;
-    for (int i = 0; i < halfN; i++) {
-        float value = forwardOutputImag[i];
-        if (value < -1) {
-            int pulse = i;
-    //                int pulse = (int)(1.0 / ((float)(i) / 10.0) * 60.0);
-            [componentFrequencies addObject:@(pulse)];
-        }
-    }
-    NSLog(@"%@", componentFrequencies);
-}
-// */
 
 @end
