@@ -31,8 +31,8 @@
 
 @end
 
-const long kMinSignalSampleCount = 30;
-const long kMaxSignalSampleCount = 150;
+const long kMinSignalSampleCount = 4;
+const long kMaxSignalSampleCount = 7;
 
 @interface ZZLEDPulseMeasure ()<AVCaptureVideoDataOutputSampleBufferDelegate>
 
@@ -313,11 +313,20 @@ const long kMaxSignalSampleCount = 150;
 //    NSMutableArray *foundPulses = NSMutableArray.array;
     
     // 找到上一次脉冲
-    ZZLEDSignalSample *lastFoundSample = nil;
+    ZZLEDSignalSample *lastFoundSample = self.foundPulses.lastObject;
     // 超过这个时间的是为过期的记录
     NSTimeInterval outDateInterval = 2.1;
     NSTimeInterval nowTime = NSDate.timeIntervalSinceReferenceDate;
     NSInteger lastFoundIndex = 0;
+    if (nowTime - lastFoundSample.time > outDateInterval) {
+        lastFoundSample = nil;
+        [self.foundPulses removeAllObjects];
+    } else {
+        if ([self.signals containsObject:lastFoundSample]) {
+            lastFoundIndex = [self.signals indexOfObject:lastFoundSample];
+        }
+    }
+    /*
     for (NSInteger emuIndex = count - 1; emuIndex >= 0; emuIndex--) {
         ZZLEDSignalSample *sig = usingSignals[emuIndex];
         if (sig.selected && (nowTime - sig.time < outDateInterval)) {
@@ -335,6 +344,7 @@ const long kMaxSignalSampleCount = 150;
         // 没有上一个脉冲记录，或已过时，则清理全部记录
         [self.foundPulses removeAllObjects];
     }
+     */
     
     // 找一个下降点和上升点，暂且认为是一个脉冲
     NSInteger dropingIndex = 0;
@@ -390,7 +400,7 @@ const long kMaxSignalSampleCount = 150;
         ZZLEDPulseDetection *detection = ZZLEDPulseDetection.alloc.init;
         NSMutableArray *calculatedPulses = self.foundPulses.mutableCopy;
         NSInteger detectedCount = calculatedPulses.count;
-        NSInteger maxUsingCount = 10;
+        NSInteger maxUsingCount = 5;
         if (detectedCount > maxUsingCount) {
             [calculatedPulses removeObjectsInRange:NSMakeRange(0, detectedCount - maxUsingCount)];
 //            detection.detectedSamples = [detection.detectedSamples subarrayWithRange:NSMakeRange(detectedCount - maxUsingCount, maxUsingCount)];
