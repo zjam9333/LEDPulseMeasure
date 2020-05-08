@@ -47,8 +47,8 @@ typedef NS_ENUM(NSInteger, ZZLEDPulseMeasureState) {
 @interface ZZLEDPulseDetection : NSObject
 
 @property (nonatomic, strong) NSArray<ZZLEDSignalSample *> *detectedSamples;
-@property (nonatomic, assign) float pulsePerMin;
-@property (nonatomic, assign) BOOL failed;
+@property (nonatomic, assign) double pulsePerMin;
+@property (nonatomic, assign) double confidence;
 
 @end
 

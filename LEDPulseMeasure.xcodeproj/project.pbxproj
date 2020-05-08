@@ -15,6 +15,7 @@
 		1C3CCDA02456B12200C993EA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C3CCD9F2456B12200C993EA /* main.m */; };
 		1C3CCDA92456B2B100C993EA /* ZZLEDPulseMeasure.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C3CCDA82456B2B100C993EA /* ZZLEDPulseMeasure.m */; };
 		1C3CCDAC2456F3DA00C993EA /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C3CCDAB2456F3DA00C993EA /* Accelerate.framework */; };
+		1C880CE0246503D60040B258 /* ZZLEDPulseWaveView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C880CDF246503D60040B258 /* ZZLEDPulseWaveView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,8 @@
 		1C3CCDAB2456F3DA00C993EA /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		1C3CCDAD2457DC2200C993EA /* TestFFT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestFFT.h; sourceTree = "<group>"; };
 		1C3CCDAE2457DC2200C993EA /* TestFFT.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestFFT.m; sourceTree = "<group>"; };
+		1C880CDE246503D60040B258 /* ZZLEDPulseWaveView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ZZLEDPulseWaveView.h; sourceTree = "<group>"; };
+		1C880CDF246503D60040B258 /* ZZLEDPulseWaveView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ZZLEDPulseWaveView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +91,8 @@
 			children = (
 				1C3CCDA72456B2B100C993EA /* ZZLEDPulseMeasure.h */,
 				1C3CCDA82456B2B100C993EA /* ZZLEDPulseMeasure.m */,
+				1C880CDE246503D60040B258 /* ZZLEDPulseWaveView.h */,
+				1C880CDF246503D60040B258 /* ZZLEDPulseWaveView.m */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -173,6 +178,7 @@
 				1C3CCD952456B12000C993EA /* ViewController.m in Sources */,
 				1C3CCDA92456B2B100C993EA /* ZZLEDPulseMeasure.m in Sources */,
 				1C3CCD8F2456B12000C993EA /* AppDelegate.m in Sources */,
+				1C880CE0246503D60040B258 /* ZZLEDPulseWaveView.m in Sources */,
 				1C3CCDA02456B12200C993EA /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

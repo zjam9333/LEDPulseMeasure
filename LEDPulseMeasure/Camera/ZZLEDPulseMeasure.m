@@ -359,6 +359,8 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
             detection.pulsePerMin = pulsesPerMin;
             detection.detectedSamples = calculatedPulses;
         }
+        // 连续的点越多越可信
+        detection.confidence = (double)detectedCount / (double)kMaxSignalSampleCount * 0.6 + 0.4;
         // 当存在几个连续的检测点时
         // 变成counting状态
         NSInteger minUsingCount = kMinDetectedUsingCount;

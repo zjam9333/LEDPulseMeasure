@@ -8,6 +8,7 @@
 
 #import "ViewController.h"
 #import "ZZLEDPulseMeasure.h"
+#import "ZZLEDPulseWaveView.h"
 
 @interface ViewController ()
 
@@ -16,6 +17,7 @@
 @property (weak, nonatomic) IBOutlet UILabel *textLabel;
 @property (weak, nonatomic) IBOutlet UILabel *heartView;
 @property (weak, nonatomic) IBOutlet UISegmentedControl *stateIndicator;
+@property (weak, nonatomic) IBOutlet ZZLEDPulseWaveView *waveView;
 
 @end
 
@@ -28,7 +30,13 @@
     self.measure.previewLayer.frame = CGRectMake(0, 0, 100, 100);
     [self.view.layer insertSublayer:self.measure.previewLayer atIndex:0];
     
+    // no strong self in block
     UIView *view = self.drawView;
+    ZZLEDPulseWaveView *waview = self.waveView;
+    UILabel *label = self.textLabel;
+    UIView *heartView = self.heartView;
+    UISegmentedControl *seg = self.stateIndicator;
+    
     self.measure.sampleCallBack = ^(ZZLEDSignalSample * _Nonnull sample) {
 //        NSLog(@"%@", @(sample.brightness));
         CGSize size = view.frame.size;
@@ -46,8 +54,6 @@
         }];
         sample.pointView = point;
     };
-    UILabel *label = self.textLabel;
-    UIView *heartView = self.heartView;
     self.measure.detectCallBack = ^(ZZLEDPulseDetection * _Nonnull detection) {
         UIView *pointv = detection.detectedSamples.lastObject.pointView;
         pointv.backgroundColor = UIColor.redColor;
@@ -56,11 +62,11 @@
         [UIView animateWithDuration:0.2 animations:^{
             heartView.transform = CGAffineTransformMakeScale(1, 1);
         }];
+        [waview addPulseWithConfidence:detection.confidence];
     };
     self.measure.measureCallBack = ^(ZZLEDPulseDetection * _Nonnull detection) {
         label.text = @((int)(detection.pulsePerMin)).stringValue;
     };
-    UISegmentedControl *seg = self.stateIndicator;
     self.measure.stateCallBack = ^(ZZLEDPulseMeasureState state) {
         seg.selectedSegmentIndex = state;
         if (state != ZZLEDPulseMeasureStateMeasuring) {
