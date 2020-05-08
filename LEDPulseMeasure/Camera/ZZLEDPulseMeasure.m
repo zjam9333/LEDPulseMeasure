@@ -215,6 +215,7 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
         }
     } else {
         self.state = ZZLEDPulseMeasureStateNothing;
+        [self.foundPulses removeAllObjects];
     }
     [self handleSignalSample:sample];
 }
@@ -330,7 +331,7 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
                     [self.foundPulses removeAllObjects];
                     [self.foundPulses addObject:foundSample];
                     foundSample.deltaTime = 0;
-                    NSLog(@"out date");
+//                    NSLog(@"out date");
                 }
             } else {
                 lastFoundSample.deltaTime = deltaTime;

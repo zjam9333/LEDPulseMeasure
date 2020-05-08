@@ -63,6 +63,9 @@
     UISegmentedControl *seg = self.stateIndicator;
     self.measure.stateCallBack = ^(ZZLEDPulseMeasureState state) {
         seg.selectedSegmentIndex = state;
+        if (state != ZZLEDPulseMeasureStateMeasuring) {
+            label.text = @"-";
+        }
     };
 }
 
