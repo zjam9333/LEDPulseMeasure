@@ -32,9 +32,8 @@
 
 const long kMinSignalSampleCount = 4;
 const long kMaxSignalSampleCount = 10;
-const float kPulseIntensityThreshold = 0.4;
-const float kMinDeltaTimeThreshold = 0.8;
-const float kMaxDeltaTimeThreshold = 1.3;
+const float kPulseIntensityErrorThreshold = 0.4;
+const float kDeltaTimeErrorThreshold = 0.2;
 const NSInteger kMinDetectedUsingCount = 3;
 const NSInteger kMaxDetectedUsingCount = 5;
 const NSTimeInterval kOutDateTimeInterval = 2.5;
@@ -290,27 +289,43 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
     NSInteger risingIndex = 0;
     ZZLEDSignalSample *lastCheckSample = lastFoundSample;
     float pulseIntensity = 0;
-    float lastDelta = 0;
+    float lastBiggestDelta = 0;
     NSInteger startEmuIndex = lastFoundIndex + 1;
-    for (NSInteger emuIndex = startEmuIndex; emuIndex < count - 1; emuIndex++) {
+    NSInteger emuCount = count;
+    for (NSInteger emuIndex = startEmuIndex; emuIndex < emuCount - 1; emuIndex++) {
         ZZLEDSignalSample *sig = usingSignals[emuIndex];
         float delta = sig.value - lastCheckSample.value;
         lastCheckSample = sig;
         if (delta < 0) {
             // start droping?
             pulseIntensity += delta;
-            if (pulseIntensity < lastFoundSample.pulseIntensity * kPulseIntensityThreshold) {
-                // start
-                if (delta < lastDelta) {
-                    lastDelta = delta;
+            BOOL get = YES;
+            if (lastFoundSample.pulseIntensity != 0) {
+                // 有合格的上一个就要和上一个比较信号强度
+                float rate = pulseIntensity / lastFoundSample.pulseIntensity;
+                if (rate > (1 / (1 - kPulseIntensityErrorThreshold)) || rate < (1 - kPulseIntensityErrorThreshold)) {
+                    get = NO;
+                }
+            }
+            // start
+            if (get) {
+                if (delta < lastBiggestDelta) {
+                    lastBiggestDelta = delta;
                     dropingIndex = emuIndex;
                     // found a start droping point
                     continue;
                 }
+//                else if (dropingIndex > 0 && (delta / lastBiggestDelta) < 0.2) {
+//                    risingIndex = emuIndex;
+//                    break;
+//                }
             }
         }
         else if (dropingIndex > 0) {
             risingIndex = emuIndex;
+            if (risingIndex - dropingIndex > 3) {
+                risingIndex = dropingIndex + 3;
+            }
             break;
         }
     }
@@ -323,21 +338,19 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
             foundSample.deltaTime = deltaTime;
             if (lastFoundSample.deltaTime > 0 && lastFoundSample.deltaTime < outDateInterval) {
                 float rate = deltaTime / lastFoundSample.deltaTime;
-                if (rate < kMinDeltaTimeThreshold || rate > kMaxDeltaTimeThreshold) {
+                if (rate < (1 - kDeltaTimeErrorThreshold) || rate > (1 / (1 - kDeltaTimeErrorThreshold))) {
                     // 保证周期基本平稳，与上一个比较
                     // 与上一个失去了联系
                     // 恢复到prepard
                     self.state = ZZLEDPulseMeasureStatePrepared;
                     [self.foundPulses removeAllObjects];
-                    [self.foundPulses addObject:foundSample];
                     foundSample.deltaTime = 0;
 //                    NSLog(@"out date");
                 }
             } else {
-                lastFoundSample.deltaTime = deltaTime;
+//                lastFoundSample.deltaTime = deltaTime;
             }
         }
-        foundSample.selected = YES;
         foundSample.pulseIntensity = pulseIntensity;
         [self.foundPulses addObject:foundSample];
         ZZLEDPulseDetection *detection = ZZLEDPulseDetection.alloc.init;
