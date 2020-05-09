@@ -342,7 +342,7 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
                     // 保证周期基本平稳，与上一个比较
                     // 与上一个失去了联系
                     // 恢复到prepard
-                    self.state = ZZLEDPulseMeasureStatePrepared;
+//                    self.state = ZZLEDPulseMeasureStatePrepared;
                     [self.foundPulses removeAllObjects];
                     foundSample.deltaTime = 0;
 //                    NSLog(@"out date");
