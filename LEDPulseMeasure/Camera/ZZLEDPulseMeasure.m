@@ -371,6 +371,11 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
 //            NSLog(@"pu:%f", pulsesPerMin);
             detection.pulsePerMin = pulsesPerMin;
             detection.detectedSamples = calculatedPulses;
+            if (pulsesPerMin < 30 || pulsesPerMin > 220) {
+                // 不正常的数字
+                [self.foundPulses removeAllObjects];
+                detectedCount = 0;
+            }
         }
         // 连续的点越多越可信
         detection.confidence = (double)detectedCount / (double)kMaxSignalSampleCount * 0.6 + 0.4;
