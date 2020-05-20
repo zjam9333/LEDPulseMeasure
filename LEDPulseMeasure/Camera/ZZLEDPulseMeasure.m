@@ -134,6 +134,37 @@ const NSTimeInterval kOutDateTimeInterval = 2.5;
     [self.session setSessionPreset:AVCaptureSessionPresetLow];
     
     self.device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    
+    // 多摄像头怎么办
+    if (@available(iOS 10.0, *)) {
+        NSMutableArray *devicetypes = [NSMutableArray array];
+        [devicetypes addObject:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+        [devicetypes addObject:AVCaptureDeviceTypeBuiltInTelephotoCamera];
+        if (@available(iOS 13.0, *)) {
+            [devicetypes addObject:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+        }
+        AVCaptureDeviceDiscoverySession *deviceDiscovery = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:devicetypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+        NSArray *devices = deviceDiscovery.devices;
+        NSLog(@"devices:%@", devices);
+        NSInteger cameraCount = devices.count;
+        if (cameraCount > 1) {
+            // iphone8 plus的长焦靠近摄像头，如果是11又没有长焦就不用考虑了吗？
+            NSString *myFavourateCameraType = AVCaptureDeviceTypeBuiltInTelephotoCamera;
+            if (@available(iOS 13.0, *)) {
+                if (cameraCount == 3) {
+                    // 11的普通广角在最上边，也算是靠近闪光灯了
+                    myFavourateCameraType = AVCaptureDeviceTypeBuiltInWideAngleCamera;
+                }
+            }
+            for (AVCaptureDevice *dev in devices) {
+                if ([dev.deviceType isEqualToString:myFavourateCameraType]) {
+                    self.device = dev;
+                    break;
+                }
+            }
+        }
+    }
+    
     // 锁定白平衡和曝光！很重要！使得信号更平稳
     [self.device lockForConfiguration:nil];
     [self.device setExposureModeCustomWithDuration:AVCaptureExposureDurationCurrent ISO:AVCaptureISOCurrent completionHandler:^(CMTime syncTime) {

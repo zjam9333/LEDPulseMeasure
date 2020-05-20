@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface ZZLEDPulseWaveView : UIView
 
 @property (nonatomic, strong) IBInspectable UIColor *drawColor;
+@property (nonatomic, assign) BOOL waving;
 - (void)addPulseWithConfidence:(CGFloat)value;
 
 @end

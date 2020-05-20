@@ -12,6 +12,8 @@ const NSInteger kMaxSignalCount = 120;
 const NSTimeInterval kTimerInterval = 0.02;
 const NSTimeInterval kPulseWaveCycle = 0.2;
 const double kUnknownValue = -1000;
+const double kMaxNormalScaleValue = 0.05;
+const double kScaleFadeStep = 0.001;
 
 @implementation ZZLEDPulseWaveView {
     NSMutableArray<NSNumber *> *signals;
@@ -21,29 +23,67 @@ const double kUnknownValue = -1000;
     BOOL isPulsing;
     NSTimeInterval pulsingCounter;
     double randomScale;
+    double normalScale;
+    NSTimer *fadeTimer;
 }
 
 - (void)dealloc {
     [timer invalidate];
 }
 
-- (void)awakeFromNib {
-    [super awakeFromNib];
+- (void)setWaving:(BOOL)waving {
+    BOOL old = _waving;
+    _waving = waving;
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
     [self config];
+    return self;
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    self = [super initWithCoder:coder];
+    [self config];
+    return self;
 }
 
 - (void)config {
-    timer = [NSTimer scheduledTimerWithTimeInterval:kTimerInterval target:self selector:@selector(autoRunning:) userInfo:nil repeats:YES];
+    if (self.backgroundColor == nil) {
+        self.backgroundColor = UIColor.clearColor;
+    }
+    [timer invalidate];
+    timer = [NSTimer timerWithTimeInterval:kTimerInterval target:self selector:@selector(autoRunning:) userInfo:nil repeats:YES];
+    [NSRunLoop.currentRunLoop addTimer:timer forMode:NSRunLoopCommonModes];
     signals = NSMutableArray.array;
     for (NSInteger i = 0; i < kMaxSignalCount; i++) {
-        [signals addObject:[NSNumber numberWithDouble:kUnknownValue]];
+        [signals addObject:[NSNumber numberWithDouble:0]];
     }
 }
 
 - (void)autoRunning:(NSTimer *)tm {
     // add fake signals
     NSTimeInterval nowTime = NSDate.timeIntervalSinceReferenceDate;
-    double scale = 0.05;// * (double)(arc4random() % 30 + 70) / 100;
+//    double scale = 0.05;// * (double)(arc4random() % 30 + 70) / 100;
+//    if (self.waving == NO) {
+//        scale = 0.001;
+//    }
+    if (self.waving) {
+        if (normalScale < 0) {
+            normalScale = 0;
+        }
+        if (normalScale < kMaxNormalScaleValue) {
+            normalScale += kScaleFadeStep;
+        }
+    } else {
+        if (normalScale > kMaxNormalScaleValue) {
+            normalScale = kMaxNormalScaleValue;
+        }
+        if (normalScale > 0) {
+            normalScale -= kScaleFadeStep;
+        }
+    }
+    double scale = normalScale;
     double val = sin(nowTime * 23) + sin(nowTime * 3) + sin(nowTime * 7);
     val = val * scale;
     if (isPulsing) {
@@ -62,13 +102,14 @@ const double kUnknownValue = -1000;
     [self setNeedsDisplay];
 }
 
-- (void)addPulseWithConfidence:(double)value {
+- (void)addPulseWithConfidence:(CGFloat)value {
     isPulsing = YES;
     pulsingCounter = 0;
     randomScale = (double)(arc4random() % 20 + 80) / 100 * value;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((kPulseWaveCycle) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         self->isPulsing = NO;
     });
+    self.waving = YES;
 }
 
 - (void)drawRect:(CGRect)rect {
@@ -102,7 +143,8 @@ const double kUnknownValue = -1000;
         CGContextAddLineToPoint(context, endX, endY);
         CGContextDrawPath(context, kCGPathStroke);
         if (endIndex == count - 1) {
-            CGContextAddArc(context, endX, endY, 4.0, 0, M_PI * 2, 0);
+            CGFloat radius = 4;
+            CGContextAddArc(context, rect.size.width - radius, endY, radius, 0, M_PI * 2, 0);
             CGContextDrawPath(context, kCGPathFill);
         }
     }
